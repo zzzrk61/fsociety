@@ -29,3 +29,6 @@ Donne l'exe à ta victime, c'est tout.
 - Testé sur Windows 10 et 11
 - L'exe se supprime automatiquement après le prank
 - Usage perso uniquement
+
+## IMPORTANT 
+Cest une simple interface si vous voulez modifer faite le 
